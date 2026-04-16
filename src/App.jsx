@@ -6,7 +6,7 @@ const Services = lazy(() => import('./components/Services'));
 const About = lazy(() => import('./components/About'));
 const FAQ = lazy(() => import('./components/FAQ'));
 const Reviews = lazy(() => import('./components/Reviews'));
-const Booking = lazy(() => import('./components/Booking'));
+const Booking = lazy(() => import('./components/booking/MultiStepBooking'));
 const Footer = lazy(() => import('./components/Footer'));
 
 function LoadingFallback() {
