@@ -28,10 +28,12 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-[#0e8fa3] to-[#0a7580] rounded-xl flex items-center justify-center">
-              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-              </svg>
+            <div className="w-12 h-12 rounded-xl overflow-hidden border-2 border-[#0e8fa3]/20 bg-white flex items-center justify-center p-1">
+              <img 
+                src="/src/assets/personal image.svg" 
+                alt="د. محمد العرجاني" 
+                className="w-full h-full object-contain"
+              />
             </div>
             <div>
               <span className="font-bold text-xl text-gray-800">د. محمد العرجاني</span>
@@ -53,9 +55,9 @@ export default function Navbar() {
           </div>
 
           <div className="hidden md:block">
-            <button className="bg-gradient-to-r from-[#0e8fa3] to-[#0a7580] text-white px-6 py-2.5 rounded-xl font-medium hover:shadow-lg hover:shadow-[#0e8fa3]/30 transition-all duration-300 hover:scale-105">
+            <a href="#booking" className="bg-gradient-to-r from-[#0e8fa3] to-[#0a7580] text-white px-6 py-2.5 rounded-xl font-medium hover:shadow-lg hover:shadow-[#0e8fa3]/30 transition-all duration-300 hover:scale-105 inline-block">
               احجز الآن
-            </button>
+            </a>
           </div>
 
           <button
@@ -86,9 +88,9 @@ export default function Navbar() {
                   {link.label}
                 </a>
               ))}
-              <button className="w-full bg-gradient-to-r from-[#0e8fa3] to-[#0a7580] text-white py-3 rounded-xl font-medium mt-4">
+              <a href="#booking" onClick={() => setIsMenuOpen(false)} className="w-full bg-gradient-to-r from-[#0e8fa3] to-[#0a7580] text-white py-3 rounded-xl font-medium mt-4 inline-block text-center">
                 احجز الآن
-              </button>
+              </a>
             </div>
           </div>
         )}
