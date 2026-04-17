@@ -141,7 +141,7 @@ export default function FAQ() {
           <div className="inline-flex flex-wrap items-center justify-center gap-4 p-8 bg-gradient-to-br from-white to-[#0e8fa3]/5 rounded-3xl shadow-xl border border-gray-100/50 backdrop-blur-sm">
             <span className="text-gray-600 font-medium">لديك سؤال آخر؟</span>
             <a 
-              href="#contact" 
+              href="#booking" 
               className="inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-[#0e8fa3] to-[#0d7a8a] text-white font-bold rounded-xl hover:shadow-2xl hover:shadow-[#0e8fa3]/30 hover:scale-105 transition-all duration-300"
             >
               <span>تواصل معنا الآن</span>

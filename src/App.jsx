@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react';
+import { Routes, Route } from 'react-router-dom';
 
 const Navbar = lazy(() => import('./components/Navbar'));
 const Hero = lazy(() => import('./components/Hero'));
@@ -8,6 +9,12 @@ const FAQ = lazy(() => import('./components/FAQ'));
 const Reviews = lazy(() => import('./components/Reviews'));
 const Booking = lazy(() => import('./components/MultiStepBooking'));
 const Footer = lazy(() => import('./components/Footer'));
+const AdminLayout = lazy(() => import('./admin/AdminLayout'));
+const AdminLogin = lazy(() => import('./admin/pages/AdminLogin'));
+const AdminDashboard = lazy(() => import('./admin/pages/AdminDashboard'));
+const AdminAvailability = lazy(() => import('./admin/pages/AdminAvailability'));
+const AdminBookings = lazy(() => import('./admin/pages/AdminBookings'));
+const AdminReviews = lazy(() => import('./admin/pages/AdminReviews'));
 
 function LoadingFallback() {
   return (
@@ -17,7 +24,7 @@ function LoadingFallback() {
   );
 }
 
-function App() {
+function HomePage() {
   return (
     <div dir="rtl" lang="ar">
       <Suspense fallback={<LoadingFallback />}>
@@ -33,6 +40,23 @@ function App() {
         <Footer />
       </Suspense>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="login" element={<AdminLogin />} />
+          <Route path="availability" element={<AdminAvailability />} />
+          <Route path="bookings" element={<AdminBookings />} />
+          <Route path="reviews" element={<AdminReviews />} />
+        </Route>
+      </Routes>
+    </Suspense>
   );
 }
 

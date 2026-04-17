@@ -1,24 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-
-// =============================================================================
-// Types & Constants
-// =============================================================================
-
-const SERVICE_TYPES = [
-  { id: 'in-person', label: 'حضوري', price: 575, duration: '30 دقيقة', icon: '🏢' },
-  { id: 'online', label: 'عن بعد', price: 375, duration: '30 دقيقة', icon: '💻' },
-  { id: 'phone', label: 'مكالمة', price: 279, duration: '-', icon: '📞' },
-];
-
-const TIME_SLOTS = [
-  '09:00 - 10:00',
-  '10:00 - 11:00',
-  '11:00 - 12:00',
-  '14:00 - 15:00',
-  '15:00 - 16:00',
-  '16:00 - 17:00',
-];
+import { useAvailability } from '../hooks/useAvailability';
+import { bookingService, serviceService } from '../services/endpoints';
 
 const WEEK_DAYS = ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'];
 const MONTHS = [
@@ -147,8 +130,9 @@ function validateEmail(email) {
 }
 
 function validatePhone(phone) {
-  const phoneRegex = /^05\d{8}$/;
-  return phoneRegex.test(phone);
+  if (!phone) return false;
+  const cleaned = phone.replace(/[\s\-()]/g, '');
+  return /^05\d{8}$/.test(cleaned) || /^5\d{8}$/.test(cleaned) || /^\+9665\d{8}$/.test(cleaned) || /^9665\d{8}$/.test(cleaned);
 }
 
 // =============================================================================
@@ -156,7 +140,7 @@ function validatePhone(phone) {
 // =============================================================================
 
 // Step 1: Date & Time Selection
-function DateTimeStep({ formData, setFormData, errors }) {
+function DateTimeStep({ formData, setFormData, errors, availableTimes, loadingTimes }) {
   const today = new Date();
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
@@ -210,7 +194,7 @@ function DateTimeStep({ formData, setFormData, errors }) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Calendar */}
       <div className="bg-white rounded-2xl p-5 border border-[#0e8fa3]/10 shadow-sm">
         <div className="flex items-center justify-between mb-4">
@@ -279,39 +263,57 @@ function DateTimeStep({ formData, setFormData, errors }) {
           <CalendarIcon className="w-5 h-5 text-[#0e8fa3]" />
           <span className="font-medium text-[#134E4A]">اختر الوقت</span>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {TIME_SLOTS.map((time) => (
-            <button
-              key={time}
-              onClick={() => setFormData(prev => ({ ...prev, time }))}
-              className={`
-                p-3 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer
-                ${formData.time === time
-                  ? 'bg-[#0e8fa3] text-white shadow-md'
-                  : 'bg-[#F0FDFA] text-[#134E4A] hover:bg-[#0e8fa3]/10 border border-[#0e8fa3]/10'
-                }
-              `}
-            >
-              {time}
-            </button>
-          ))}
-        </div>
+        {loadingTimes && formData.date && (
+          <p className="text-center text-[#0e8fa3] text-sm py-2">جاري تحميل الأوقات المتاحة...</p>
+        )}
+        {formData.date && availableTimes.length === 0 && !loadingTimes ? (
+          <p className="text-center text-[#134E4A]/60 text-sm py-4">لا توجد أوقات متاحة لهذا التاريخ</p>
+        ) : !formData.date ? (
+          <p className="text-center text-[#134E4A]/60 text-sm py-4">اختر التاريخ أولاً لعرض الأوقات المتاحة</p>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            {availableTimes.map((time) => (
+              <button
+                key={time}
+                onClick={() => setFormData(prev => ({ ...prev, time }))}
+                className={`
+                  p-3 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer
+                  ${formData.time === time
+                    ? 'bg-[#0e8fa3] text-white shadow-md'
+                    : 'bg-[#F0FDFA] text-[#134E4A] hover:bg-[#0e8fa3]/10 border border-[#0e8fa3]/10'
+                  }
+                `}
+              >
+                {time}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {errors.dateTime && (
-        <p className="text-red-500 text-sm text-center">{errors.dateTime}</p>
+        <p className="text-red-500 text-sm text-center lg:col-span-2">{errors.dateTime}</p>
       )}
     </div>
   );
 }
 
 // Step 2: Service Type Selection
-function ServiceStep({ formData, setFormData }) {
+function ServiceStep({ formData, setFormData, services }) {
+  if (services.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <div className="w-12 h-12 border-4 border-[#0e8fa3]/20 border-t-[#0e8fa3] rounded-full animate-spin mx-auto"></div>
+        <p className="text-[#134E4A]/60 mt-4">جاري تحميل الخدمات...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <p className="text-[#134E4A]/70 text-center mb-4">اختر نوع الاستشارة المناسب لك</p>
-      
-      {SERVICE_TYPES.map((service) => (
+
+      {services.map((service) => (
         <button
           key={service.id}
           onClick={() => setFormData(prev => ({ ...prev, serviceType: service }))}
@@ -325,10 +327,10 @@ function ServiceStep({ formData, setFormData }) {
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <span className="text-3xl">{service.icon}</span>
+              <span className="text-3xl">{service.icon || '📋'}</span>
               <div>
-                <h4 className="font-semibold text-[#134E4A] text-lg">{service.label}</h4>
-                <p className="text-sm text-[#134E4A]/60">{service.duration}</p>
+                <h4 className="font-semibold text-[#134E4A] text-lg">{service.name_ar}</h4>
+                <p className="text-sm text-[#134E4A]/60">{service.duration || '-'}</p>
               </div>
             </div>
             <div className="text-left">
@@ -659,9 +661,12 @@ export default function MultiStepBooking() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [errors, setErrors] = useState({});
+  const [services, setServices] = useState([]);
+  const [submitError, setSubmitError] = useState('');
+
+  const { availability, loading: loadingAvailability, getAvailableTimesForDate } = useAvailability();
 
   const [formData, setFormData] = useState(() => {
-    // Try to load from localStorage
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
@@ -682,7 +687,30 @@ export default function MultiStepBooking() {
     };
   });
 
-  // Save to localStorage on change
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const response = await serviceService.getAll();
+        const servicesData = response.data.data || response.data;
+        setServices(Array.isArray(servicesData) ? servicesData : []);
+      } catch (err) {
+        console.error('Failed to fetch services:', err);
+        setServices([
+          { id: 1, name_ar: 'حضوري', name: 'In-Person', price: 575, duration: '30 دقيقة', icon: '🏢', type: 'in-person' },
+          { id: 2, name_ar: 'عن بعد', name: 'Online', price: 375, duration: '30 دقيقة', icon: '💻', type: 'online' },
+          { id: 3, name_ar: 'مكالمة', name: 'Phone', price: 279, duration: '-', icon: '📞', type: 'phone' },
+        ]);
+      }
+    };
+    fetchServices();
+  }, []);
+
+  const selectedDateString = formData.date
+    ? `${formData.date.year}-${String(formData.date.month + 1).padStart(2, '0')}-${String(formData.date.day).padStart(2, '0')}`
+    : '';
+
+  const availableTimes = selectedDateString ? getAvailableTimesForDate(selectedDateString) : [];
+
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
@@ -709,7 +737,7 @@ export default function MultiStepBooking() {
         if (!formData.phone?.trim()) {
           newErrors.phone = 'الرجاء إدخال رقم الهاتف';
         } else if (!validatePhone(formData.phone)) {
-          newErrors.phone = 'رقم الهاتف غير صحيح (يجب أن يكون 05xxxxxxxx)';
+          newErrors.phone = 'رقم الهاتف غير صحيح (مثال: 05xxxxxxxx)';
         }
         if (formData.email && !validateEmail(formData.email)) {
           newErrors.email = 'البريد الإلكتروني غير صحيح';
@@ -742,15 +770,30 @@ export default function MultiStepBooking() {
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setIsSubmitting(false);
-    setIsSuccess(true);
-    
-    // Clear localStorage on success
-    localStorage.removeItem(STORAGE_KEY);
+    setSubmitError('');
+    try {
+      const dateString = `${formData.date.year}-${String(formData.date.month + 1).padStart(2, '0')}-${String(formData.date.day).padStart(2, '0')}`;
+      const bookingData = {
+        name: formData.fullName,
+        phone: formData.phone,
+        email: formData.email || null,
+        service_id: formData.serviceType?.id,
+        date: dateString,
+        time: formData.time,
+        location_text: formData.location || null,
+        location_lat: formData.locationCoords?.lat || null,
+        location_lng: formData.locationCoords?.lng || null,
+      };
+
+      await bookingService.create(bookingData);
+      setIsSuccess(true);
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (err) {
+      const message = err.response?.data?.message || 'حدث خطأ في إرسال الحجز. يرجى المحاولة مرة أخرى.';
+      setSubmitError(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const canProceed = () => {
@@ -760,9 +803,9 @@ export default function MultiStepBooking() {
       case 2:
         return formData.serviceType;
       case 3:
-        return formData.fullName?.trim() && formData.phone?.trim() && validatePhone(formData.phone);
+        return formData.fullName?.trim() && formData.phone?.trim();
       case 4:
-        return true; // Optional
+        return true;
       case 5:
         return true;
       case 6:
@@ -777,9 +820,9 @@ export default function MultiStepBooking() {
 
     switch (currentStep) {
       case 1:
-        return <DateTimeStep {...stepProps} />;
+        return <DateTimeStep {...stepProps} availableTimes={availableTimes} loadingTimes={loadingAvailability} />;
       case 2:
-        return <ServiceStep {...stepProps} />;
+        return <ServiceStep {...stepProps} services={services} />;
       case 3:
         return <UserInfoStep {...stepProps} />;
       case 4:
@@ -788,11 +831,16 @@ export default function MultiStepBooking() {
         return <SummaryStep {...stepProps} />;
       case 6:
         return (
-          <ConfirmationStep 
-            isSubmitting={isSubmitting}
-            isSuccess={isSuccess}
-            onSubmit={handleSubmit}
-          />
+          <>
+            <ConfirmationStep 
+              isSubmitting={isSubmitting}
+              isSuccess={isSuccess}
+              onSubmit={handleSubmit}
+            />
+            {submitError && (
+              <p className="text-red-500 text-sm text-center mt-2">{submitError}</p>
+            )}
+          </>
         );
       default:
         return null;
@@ -806,7 +854,7 @@ export default function MultiStepBooking() {
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#0e8fa3]/5 rounded-full blur-3xl"></div>
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-[#0e8fa3]/5 rounded-full blur-3xl"></div>
 
-      <div className="max-w-2xl mx-auto relative z-10">
+      <div className="max-w-6xl mx-auto relative z-10">
         {/* Header */}
         <div className="text-center mb-10">
           <span className="inline-block px-4 py-2 bg-[#0e8fa3]/10 text-[#0e8fa3] text-sm font-medium rounded-full mb-4">

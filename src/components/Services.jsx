@@ -154,9 +154,9 @@ export default function Services() {
                   ))}
                 </ul>
                 
-                <button className="w-full bg-gradient-to-r from-[#0e8fa3] to-[#0a7580] text-white py-3 rounded-xl font-medium hover:shadow-lg hover:shadow-[#0e8fa3]/30 transition-all duration-300 group-hover:scale-105">
+                <a href="#booking" className="w-full bg-gradient-to-r from-[#0e8fa3] to-[#0a7580] text-white py-3 rounded-xl font-medium hover:shadow-lg hover:shadow-[#0e8fa3]/30 transition-all duration-300 group-hover:scale-105 block text-center">
                   احجز الآن
-                </button>
+                </a>
               </div>
             </div>
           ))}
@@ -196,9 +196,9 @@ export default function Services() {
                     {service.description}
                   </p>
                   
-                  <button className="w-full bg-gradient-to-r from-[#0e8fa3] to-[#0a7580] text-white py-3 rounded-xl font-medium hover:shadow-lg hover:shadow-[#0e8fa3]/30 transition-all duration-300 group-hover:scale-105">
+                  <a href="#booking" className="w-full bg-gradient-to-r from-[#0e8fa3] to-[#0a7580] text-white py-3 rounded-xl font-medium hover:shadow-lg hover:shadow-[#0e8fa3]/30 transition-all duration-300 group-hover:scale-105 block text-center">
                     {service.cta}
-                  </button>
+                  </a>
                 </div>
               </div>
             ))}

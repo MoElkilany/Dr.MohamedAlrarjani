@@ -1,6 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { reviewService } from '../services/endpoints';
 
-const reviews = [
+const stats = [
+  { number: '+500', label: 'عميل سعيد' },
+  { number: '+200', label: 'صفقة ناجحة' },
+  { number: '15+', label: 'سنوات خبرة' },
+  { number: '4.9', label: 'التقييم' },
+];
+
+const FALLBACK_REVIEWS = [
   {
     name: 'أحمد محمد',
     rating: 5,
@@ -25,13 +33,6 @@ const reviews = [
     text: 'خدمة تقييم عقارات متميزة. التقرير شامل ومفصل جداً.',
     role: 'مالكة فيلا',
   },
-];
-
-const stats = [
-  { number: '+500', label: 'عميل سعيد' },
-  { number: '+200', label: 'صفقة ناجحة' },
-  { number: '15+', label: 'سنوات خبرة' },
-  { number: '4.9', label: 'التقييم' },
 ];
 
 function StarIcon({ filled = true, onClick, onMouseEnter, onMouseLeave }) {
@@ -73,7 +74,7 @@ function CloseIcon() {
 }
 
 export default function Reviews() {
-  const [allReviews, setAllReviews] = useState(reviews);
+  const [allReviews, setAllReviews] = useState(FALLBACK_REVIEWS);
   const [showForm, setShowForm] = useState(false);
   const [hoverRating, setHoverRating] = useState(0);
   const [formData, setFormData] = useState({
@@ -84,31 +85,56 @@ export default function Reviews() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    const fetchReviews = async () => {
+      try {
+        const response = await reviewService.getApproved();
+        const data = response.data.data || response.data;
+        if (Array.isArray(data) && data.length > 0) {
+          setAllReviews(data.map(r => ({
+            name: r.name,
+            rating: r.rating,
+            text: r.comment,
+            role: r.role || 'عميل',
+          })));
+        }
+      } catch (err) {
+        console.error('Failed to fetch reviews:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchReviews();
+  }, []);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name.trim() || !formData.text.trim()) return;
-    
+
     setIsSubmitting(true);
-    
-    setTimeout(() => {
-      const newReview = {
+
+    try {
+      await reviewService.create({
         name: formData.name,
         rating: formData.rating,
-        text: formData.text,
+        comment: formData.text,
         role: formData.role || 'عميل',
-      };
-      
-      setAllReviews([newReview, ...allReviews]);
-      setIsSubmitting(false);
+      });
+
       setSubmitted(true);
-      
+
       setTimeout(() => {
         setShowForm(false);
         setSubmitted(false);
         setFormData({ name: '', rating: 5, text: '', role: '' });
       }, 2000);
-    }, 1000);
+    } catch (err) {
+      console.error('Failed to submit review:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const renderStarSelector = (currentRating, onSelect) => (
@@ -203,10 +229,10 @@ export default function Reviews() {
 
         <button
           onClick={() => setShowForm(true)}
-          className="fixed bottom-8 left-8 z-40 w-16 h-16 bg-gradient-to-br from-[#0e8fa3] to-[#0e8fa3] rounded-full shadow-lg shadow-[#0e8fa3]/30 flex items-center justify-center text-white hover:scale-110 transition-transform duration-300 group"
+          className="fixed bottom-8 right-8 z-40 w-16 h-16 bg-gradient-to-br from-[#0e8fa3] to-[#0a7580] rounded-full shadow-lg shadow-[#0e8fa3]/30 flex items-center justify-center text-white hover:scale-110 transition-transform duration-300 group hover:shadow-xl"
         >
           <PlusIcon />
-          <span className="absolute left-full ml-3 px-4 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
+          <span className="absolute right-full mr-3 px-4 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
             أضف تقييمك
           </span>
         </button>
